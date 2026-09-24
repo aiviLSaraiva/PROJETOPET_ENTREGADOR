@@ -1,0 +1,173 @@
+
+// Dimensões Principais (Base Lego 6x13 + Abas de fixação baixas)
+espessura_parede = 3;
+largura = 48;       
+comprimento = 104;  
+altura = 65;        
+dist_quina = 4;     
+raio_parafuso = 1.6;
+
+module chassi() {
+    union() {
+        difference() {
+            // Corpo principal + Abas laterais apenas na base (5mm de altura)
+            union() {
+                cube([largura, comprimento, altura], center=true);
+                // Aba com 5mm de altura, alinhada com o chão (Z = -altura/2 + 2.5)
+                translate([0, -40, -altura/2 + 2.5]) cube([largura + 16, 24, 5], center=true);
+            }
+            
+            // Interior oco
+            translate([0, 0, espessura_parede])
+                cube([largura - espessura_parede*2, comprimento - espessura_parede*2, altura], center=true);
+                
+            // Encaixes Lego (Fundo matriz 6x13 principal)
+            for (x = [-largura/2 + 4 : 8 : largura/2 - 4], y = [-comprimento/2 + 4 : 8 : comprimento/2 - 4]) {
+                translate([x, y, -altura/2 + 1])
+                    cylinder(h=espessura_parede + 2, r=2.5, $fn=20, center=true);
+            }
+            
+            // Encaixes Lego Extras (Nas abas de 5mm, 3 primeiras fileiras)
+            for (x = [-largura/2 - 4, largura/2 + 4]) {
+                for (y = [-48, -40, -32]) {
+                    translate([x, y, -altura/2 + 1])
+                        cylinder(h=espessura_parede + 2, r=2.5, $fn=20, center=true);
+                }
+            }
+            
+            // Furos: Sensor ultrassônico e Chave gangorra
+            translate([0, -comprimento/2, altura/4]) rotate([90, 0, 0]) {
+                translate([-13, 0, 0]) cylinder(h=20, r=8.2, $fn=50, center=true);
+                translate([ 13, 0, 0]) cylinder(h=20, r=8.2, $fn=50, center=true);
+            }
+            translate([0, comprimento/2, -altura/4]) cube([15, 20, 10], center=true);
+            
+            // Respiros laterais
+            for (y_off = [-10, 0, 10], z_off = [5, 15, 25], x_off = [-largura/2, largura/2]) {
+                translate([x_off, y_off, z_off]) rotate([0, 90, 0]) cylinder(h=20, r=2.5, $fn=6, center=true);
+            }
+            
+            // Furos da tampa nas quinas
+            for (x = [-1, 1], y = [-1, 1]) {
+                translate([x * (largura/2 - dist_quina), y * (comprimento/2 - dist_quina), altura/2 - 10])
+                    cylinder(h=25, r=raio_parafuso, $fn=20);
+            }
+        }
+        
+        // Torres de fixação internas
+        for (x = [-1, 1], y = [-1, 1]) {
+            translate([x * (largura/2 - dist_quina), y * (comprimento/2 - dist_quina), altura/2 - 15])
+            difference() {
+                cylinder(h=30, r=dist_quina, $fn=30, center=true);
+                cylinder(h=32, r=raio_parafuso, $fn=20, center=true);
+            }
+        }
+    }
+}
+
+// --- Submódulos da Tampa e Alçapão ---
+largura_alc = 26; 
+comp_alc = 35; 
+altura_alc = 15; 
+off_x = 0;   
+off_y = 18;  
+
+module tampa() {
+    difference() {
+        union() {
+            // A tampa volta a ser um retângulo limpo
+            cube([largura, comprimento, espessura_parede], center=true);
+            
+            translate([off_x, off_y, -altura_alc/2 - espessura_parede/2])
+            difference() {
+                cube([largura_alc, comp_alc, altura_alc], center=true);
+                translate([0, 0, espessura_parede])
+                    cube([largura_alc - espessura_parede*2, comp_alc - espessura_parede*2, altura_alc], center=true);
+            }
+        }
+        
+        translate([off_x, off_y, 0])
+            cube([largura_alc - espessura_parede*2, comp_alc - espessura_parede*2, espessura_parede + 2], center=true);
+            
+        for (x = [-1, 1], y = [-1, 1]) {
+            translate([x * (largura/2 - dist_quina), y * (comprimento/2 - dist_quina), 0])
+                cylinder(h=espessura_parede + 2, r=raio_parafuso + 0.4, $fn=20, center=true);
+        }
+    }
+}
+
+module alcapao() {
+    espessura = 1.2; 
+    porta_w = largura_alc - espessura_parede*2 - 0.6; 
+    porta_l = comp_alc - espessura_parede*2 - 0.6;
+    
+    union() {
+        cube([porta_w + 4, porta_l + 4, espessura], center=true);
+        translate([0, 0, -espessura]) cube([porta_w, porta_l, espessura], center=true);
+        
+        translate([0, porta_l/2 - 4, espessura])
+        difference() {
+            cube([4, 6, 6], center=true);
+            translate([0, 0, 1]) rotate([0, 90, 0]) cylinder(h=10, r=1.5, $fn=15, center=true);
+        }
+    }
+}
+
+// --- Peças Eletrônicas Detalhadas e Parafusos ---
+
+module parafuso() {
+    translate([0, 0, 1]) cylinder(h=2, r=3, $fn=20, center=true);
+    translate([0, 0, -4]) cylinder(h=10, r=raio_parafuso, $fn=20, center=true);
+}
+
+module sensor_ultrassonico() {
+    translate([0, 0, 0]) cube([45, 2, 20], center=true);
+    translate([-13, -7, 0]) rotate([90, 0, 0]) cylinder(h=14, r=8, $fn=30, center=true);
+    translate([ 13, -7, 0]) rotate([90, 0, 0]) cylinder(h=14, r=8, $fn=30, center=true);
+    translate([0, 1, -5]) cube([4, 4, 3], center=true);
+    translate([0, 1, -9]) cube([8, 2, 4], center=true);
+}
+
+module chave_gangorra() {
+    cube([16, 12, 11], center=true); 
+    translate([0, 6.5, 0]) cube([18, 2, 13], center=true);
+    translate([0, 7.5, 0]) rotate([-10, 0, 0]) cube([12, 3, 9], center=true);
+}
+
+module tela_lcd() {
+    cube([40, 20, 2], center=true);
+    translate([0, 0, 1]) cube([36, 16, 2], center=true);
+    translate([0, 0, 1.5]) cube([32, 12, 1.5], center=true);
+    translate([0, 0, 2.3]) linear_extrude(1) text("***8", size=6, halign="center", valign="center");
+}
+
+module teclado() {
+    cube([30, 40, 2], center=true);
+    for (cx = [-10, 0, 10], cy = [-15, -5, 5, 15]) {
+        translate([cx, cy, 1]) cube([7, 7, 2], center=true);
+    }
+    translate([-10, -15, 1.1]) cube([7, 7, 2], center=true);
+    translate([10, -15, 1.1]) cube([7, 7, 2], center=true);
+}
+
+// --- Montagem Final ---
+
+chassi();
+
+translate([0, 0, altura/2 + espessura_parede/2]) tampa();
+
+translate([off_x, off_y, altura/2 + espessura_parede/2]) alcapao();
+
+for (x = [-1, 1], y = [-1, 1]) {
+    translate([x * (largura/2 - dist_quina), y * (comprimento/2 - dist_quina), altura/2 + espessura_parede])
+    parafuso();
+}
+
+translate([0, -comprimento/2 + 2, altura/4]) sensor_ultrassonico();
+translate([0, comprimento/2 - 6, -altura/4]) chave_gangorra();
+
+translate([0, -35, altura/2 + espessura_parede + 1]) 
+    scale([0.8, 0.8, 1]) tela_lcd();
+
+translate([0, -12, altura/2 + espessura_parede + 1]) 
+    scale([0.65, 0.65, 1]) teclado();
